@@ -1,0 +1,33 @@
+{
+  "name": "stream-movies",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A streaming-style movie and TV discovery app powered by the Watchmode API",
+  "type": "module",
+  "engines": {
+    "node": ">=18.18"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c red,cyan \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:server": "node --watch server/index.js",
+    "dev:web": "vite",
+    "build": "tsc --noEmit && vite build",
+    "start": "node server/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.18.7"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^6.3.0",
+    "concurrently": "^9.1.0",
+    "typescript": "~5.6.3",
+    "vite": "^8.3.8"
+  }
+}
