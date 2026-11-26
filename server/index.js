@@ -4,8 +4,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { PersistentCache } from './cache.js';
-import { createWatchmodeClient, matchRoute, UpstreamError } from './watchmode.js';
-import { demoImage, demoRequest } from './demo.js';
+import { createWatchmodeClient, loadCards, matchRoute, UpstreamError } from '../shared/watchmode.js';
+import { demoImage, demoRequest } from '../shared/demo.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const apiKey = (process.env.WATCHMODE_API_KEY || '').trim();
@@ -37,13 +37,20 @@ function sendError(res, err) {
   return res.status(timeout ? 504 : 502).json({ error: timeout ? 'Watchmode took too long to respond' : 'Could not reach Watchmode' });
 }
 
-const CARD_FIELDS = [
-  'id', 'title', 'type', 'year', 'end_year', 'runtime_minutes', 'genre_names', 'user_rating', 'critic_score',
-  'us_rating', 'poster', 'posterMedium', 'backdrop', 'trailer', 'plot_overview', 'popularity_percentile',
-];
-
 const app = express();
 app.disable('x-powered-by');
+
+// The Android app can use this server instead of calling Watchmode directly
+// (build it with VITE_API_BASE_URL). Its pages load from this origin.
+const corsOrigins = new Set([
+  'https://com.streammovies.app',
+  ...(process.env.CORS_ORIGINS || '').split(',').map((o) => o.trim()).filter(Boolean),
+]);
+app.use('/api', (req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && corsOrigins.has(origin)) res.set({ 'Access-Control-Allow-Origin': origin, Vary: 'Origin' });
+  next();
+});
 
 app.get('/api/config', (_req, res) => {
   res.json({ demo, region });
@@ -63,25 +70,12 @@ app.get('/api/status', async (_req, res) => {
 // the frontend only asks for titles that are actually on screen.
 app.get('/api/cards', async (req, res) => {
   const ids = [...new Set(String(req.query.ids || '').split(','))].filter((id) => /^\d{1,10}$/.test(id)).slice(0, 40);
-  const results = await Promise.allSettled(ids.map((id) => wmGet(`/title/${id}/details`)));
-  const cards = [];
-  const failed = [];
-  let rateLimited = false;
-  results.forEach((r, i) => {
-    if (r.status === 'fulfilled') {
-      const card = {};
-      for (const f of CARD_FIELDS) card[f] = r.value.body?.[f] ?? null;
-      cards.push(card);
-    } else {
-      failed.push(Number(ids[i]));
-      if (r.reason?.status === 429) rateLimited = true;
-    }
-  });
-  // When nothing loaded because of the key or quota, say so with the real status
-  // so the app can show its account-level notice.
-  const accountError = results.find((r) => r.status === 'rejected' && [401, 429].includes(r.reason?.status));
-  if (!cards.length && accountError) return sendError(res, accountError.reason);
-  res.set('Cache-Control', cards.length ? 'private, max-age=300' : 'no-store').json({ cards, failed, rateLimited });
+  try {
+    const result = await loadCards(ids, async (id) => (await wmGet(`/title/${id}/details`)).body);
+    res.set('Cache-Control', result.cards.length ? 'private, max-age=300' : 'no-store').json(result);
+  } catch (err) {
+    sendError(res, err);
+  }
 });
 
 app.get('/api/demo/img/:kind/:file', (req, res) => {

@@ -53,3 +53,21 @@ export const DoubleThumb = (p: P & { filled?: boolean }) => {
     </Svg>
   );
 };
+export const HomeIcon = (p: P & { filled?: boolean }) => {
+  const { filled, ...rest } = p;
+  return <Svg {...rest}><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1v-9.5Z" {...stroke} fill={filled ? 'currentColor' : 'none'} /></Svg>;
+};
+export const SparkIcon = (p: P & { filled?: boolean }) => {
+  const { filled, ...rest } = p;
+  return <Svg {...rest}><path d="M12 3c.6 3.9 2.6 6.4 6.5 7.5-3.9 1.1-5.9 3.6-6.5 7.5-.6-3.9-2.6-6.4-6.5-7.5C9.4 9.4 11.4 6.9 12 3Z" {...stroke} fill={filled ? 'currentColor' : 'none'} /><path d="M18.5 16.5c.2 1.3.9 2.1 2 2.5-1.1.4-1.8 1.2-2 2.5-.2-1.3-.9-2.1-2-2.5 1.1-.4 1.8-1.2 2-2.5Z" fill="currentColor" /></Svg>;
+};
+export const GridIcon = (p: P & { filled?: boolean }) => {
+  const { filled, ...rest } = p;
+  const f = filled ? 'currentColor' : 'none';
+  return <Svg {...rest}><rect x="4" y="4" width="7" height="7" rx="1.5" {...stroke} fill={f} /><rect x="13" y="4" width="7" height="7" rx="1.5" {...stroke} fill={f} /><rect x="4" y="13" width="7" height="7" rx="1.5" {...stroke} fill={f} /><rect x="13" y="13" width="7" height="7" rx="1.5" {...stroke} fill={f} /></Svg>;
+};
+export const BookmarkIcon = (p: P & { filled?: boolean }) => {
+  const { filled, ...rest } = p;
+  return <Svg {...rest}><path d="M6.5 4h11a1 1 0 0 1 1 1v15.5L12 16.5l-6.5 4V5a1 1 0 0 1 1-1Z" {...stroke} fill={filled ? 'currentColor' : 'none'} /></Svg>;
+};
+export const YoutubeIcon = (p: P) => <Svg {...p}><rect x="2.5" y="5.5" width="19" height="13" rx="3.5" {...stroke} /><path d="m10 9.2 5 2.8-5 2.8V9.2Z" fill="currentColor" /></Svg>;

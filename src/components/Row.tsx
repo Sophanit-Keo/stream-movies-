@@ -53,7 +53,7 @@ export function Row({ title, items, loading, variant = 'landscape', ranked, href
           <Link to={href}>
             {title}
             <span className="row-explore">
-              Explore All <ChevronRight size={14} />
+              <span className="row-explore-text">Explore All</span> <ChevronRight size={14} />
             </span>
           </Link>
         ) : (

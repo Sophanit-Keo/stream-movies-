@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">StreamMovies</string>
+    <string name="title_activity_main">StreamMovies</string>
+    <string name="package_name">com.streammovies.app</string>
+    <string name="custom_url_scheme">com.streammovies.app</string>
+</resources>

@@ -46,6 +46,10 @@ export function Navbar() {
         ))}
       </nav>
       <MobileMenu />
+      <nav className="nav-chips" aria-label="Categories">
+        <NavLink to="/tv" className={({ isActive }) => `chip${isActive ? ' is-active' : ''}`}>TV Shows</NavLink>
+        <NavLink to="/movies" className={({ isActive }) => `chip${isActive ? ' is-active' : ''}`}>Movies</NavLink>
+      </nav>
       <div className="nav-right">
         <SearchBox />
         {profile?.kids && <span className="nav-kids">Kids</span>}
@@ -167,7 +171,7 @@ function Notifications() {
   ).slice(0, 8);
 
   return (
-    <div className="nav-pop" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+    <div className="nav-pop nav-bell" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
       <button type="button" className="icon-btn" aria-label="New arrivals" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
         <BellIcon size={22} />
       </button>

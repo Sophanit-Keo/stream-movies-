@@ -1,3 +1,6 @@
+// Watchmode client shared by the Node server and the Android app (which calls
+// Watchmode directly). Keep it free of Node-only modules.
+
 const BASE_URL = 'https://api.watchmode.com/v1';
 
 const HOUR = 60 * 60 * 1000;
@@ -173,4 +176,33 @@ export function createWatchmodeClient({ apiKey, cache, ttlScale = 1 }) {
   }
 
   return { get, status, lastQuota: () => ({ ...quota }) };
+}
+
+/** Fields of the title details response that a card needs. */
+export const CARD_FIELDS = [
+  'id', 'title', 'type', 'year', 'end_year', 'runtime_minutes', 'genre_names', 'user_rating', 'critic_score',
+  'us_rating', 'poster', 'posterMedium', 'backdrop', 'trailer', 'plot_overview', 'popularity_percentile',
+];
+
+/** Card data for many titles. Each uncached title costs one credit. */
+export async function loadCards(ids, getDetails) {
+  const results = await Promise.allSettled(ids.map((id) => getDetails(id)));
+  const cards = [];
+  const failed = [];
+  let rateLimited = false;
+  let accountError = null;
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled') {
+      const card = {};
+      for (const f of CARD_FIELDS) card[f] = r.value?.[f] ?? null;
+      cards.push(card);
+    } else {
+      failed.push(Number(ids[i]));
+      if (r.reason?.status === 429) rateLimited = true;
+      if ([401, 429].includes(r.reason?.status)) accountError = accountError ?? r.reason;
+    }
+  });
+  // When nothing loaded because of the key or quota, report that error instead.
+  if (!cards.length && accountError) throw accountError;
+  return { cards, failed, rateLimited };
 }

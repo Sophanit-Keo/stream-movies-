@@ -1,7 +1,8 @@
 // Generated sample data for running the app without a Watchmode API key.
 // Response shapes follow the Watchmode v1 API so the frontend code path is
 // identical in demo and live mode. All titles, people and services here are
-// fictional.
+// fictional. Used by the Node server and by the Android app, so this file
+// must not depend on Node-only modules.
 
 function mulberry32(seed) {
   return function next() {
@@ -79,7 +80,12 @@ const today = new Date();
 const isoDate = (d) => d.toISOString().slice(0, 10);
 const addDays = (d, n) => new Date(d.getTime() + n * 86400000);
 
-const img = (kind, id) => `/api/demo/img/${kind}/${id}.svg`;
+let imageUrl = (kind, id) => `/api/demo/img/${kind}/${id}.svg`;
+/** Lets the phone app draw demo images as data URIs, since it has no server to fetch them from. */
+export function setDemoImageUrl(fn) {
+  imageUrl = fn;
+}
+const img = (kind, id) => imageUrl(kind, id);
 
 export const DEMO_PEOPLE = Array.from({ length: 140 }, (_, i) => ({
   id: 7100000 + i,
@@ -244,7 +250,6 @@ const RELEASES = DEMO_TITLES.slice(0, 70).map((t, i) => {
     tmdb_type: t.type === 'movie' ? 'movie' : 'tv',
     imdb_id: null,
     season_number: t.seasons ? t.seasons : null,
-    poster_url: img('poster', t.id),
     source_release_date: isoDate(addDays(today, (i % 45) - 15)),
     source_id: source.id,
     source_name: source.name,
@@ -296,7 +301,10 @@ export function demoRequest(pathname, query, region = 'US') {
   if (pathname === '/releases') {
     const start = query.start_date || isoDate(addDays(today, -1));
     const end = query.end_date || isoDate(addDays(today, 30));
-    return json({ releases: RELEASES.filter((r) => r.source_release_date >= start && r.source_release_date <= end) });
+    return json({
+      releases: RELEASES.filter((r) => r.source_release_date >= start && r.source_release_date <= end)
+        .map((r) => ({ ...r, poster_url: img('poster', r.id) })),
+    });
   }
   if (pathname === '/autocomplete-search') {
     const q = String(query.search_value || '').toLowerCase();

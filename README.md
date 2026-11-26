@@ -18,6 +18,7 @@ A streaming-style movie and TV app built on the [Watchmode API](https://api.watc
 - **Notifications bell:** new arrivals on streaming services.
 - **Account page:** choose your country for where-to-watch, turn trailer autoplay on or off, and see API credit usage.
 - **Responsive layout** for phones, tablets and desktop.
+- **Android app:** an installable APK with a bottom tab bar and back-button support. It needs no server. See [Android app](#android-app).
 
 ## Quick start
 
@@ -39,6 +40,50 @@ Get a free API key at <https://api.watchmode.com/requestApiKey/>. **Without a ke
 npm run build
 npm start                 # serves the app and API on http://localhost:8787
 ```
+
+## Android app
+
+The `android/` folder holds a native Android app built with [Capacitor](https://capacitorjs.com/). It runs the same React app with phone-specific touches:
+
+- A bottom tab bar (Home, New & Hot, Search, Browse, My List) and TV Shows / Movies chips at the top.
+- The Android back button closes the title details, goes back a page, or leaves the app from Home.
+- Edge-to-edge layout that keeps clear of the status bar and gesture bar.
+- **Where to Watch** links go through Android, so Netflix, Prime Video and other links open in the service's app when it is installed.
+- A dark launch screen and a launcher icon that follows themed icons on Android 13 and later.
+
+**No server needed.** The app calls Watchmode directly. The first time it opens, it asks for your Watchmode API key and checks it, or you can tap **Try demo mode**. The key is saved only on that phone and is never built into the APK. Responses are cached on the phone, like the server's cache, to save credits. You can change the key or clear saved data on the Account page.
+
+### Install on a phone
+
+1. Get `app-debug.apk`: build it yourself (below), or download it from the **Android APK** workflow run in this repo's GitHub Actions tab (open the run, then **Artifacts**).
+2. Copy it to your phone and open it. Android asks you to allow installs from that source (Files, Chrome, and so on) the first time.
+3. Open **StreamMovies**, then enter your API key or choose demo mode.
+
+The debug APK is signed with a development key. That is fine for your own phones. Publishing on Google Play needs a release build signed with your own key.
+
+### Build the APK
+
+Requirements: Node.js 22+, JDK 21, and the Android SDK (installed with [Android Studio](https://developer.android.com/studio), or set `ANDROID_HOME` to a command-line SDK).
+
+```bash
+npm install
+npm run android:apk        # builds the web app, copies it into android/, runs Gradle
+# Output: android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+On Windows, run `npm run android:sync`, then `gradlew.bat assembleDebug` inside `android/`. To work in Android Studio (run on a device or emulator, debug, build a signed release), use `npm run android:sync`, then `npm run android:open`.
+
+After changing anything under `src/`, run `npm run android:sync` again so the Android project gets the new build.
+
+### Optional: use your own server instead
+
+To keep the API key off the phones entirely (for example, if you give the app to other people), deploy the Node server and build the app with its address:
+
+```bash
+VITE_API_BASE_URL=https://your-server.example.com npm run android:apk
+```
+
+The server already allows requests from the app (origin `https://com.streammovies.app`). Add other origins with `CORS_ORIGINS`.
 
 ## How it works
 
@@ -70,21 +115,33 @@ A first full scroll of the home page costs roughly 80 credits. After that it is 
 | `PORT` | `8787` | Port for the API server. The Vite dev server proxies `/api` to it. |
 | `CACHE_TTL_SCALE` | `1` | Multiplies every cache lifetime. For example, `3` keeps entries three times longer. |
 | `WATCHMODE_DEMO` | `false` | Set to `true` to force demo data even when a key is set. |
+| `CORS_ORIGINS` | *(empty)* | Extra comma-separated origins allowed to call the server's API. |
+
+Build-time options for the frontend (set them when running `npm run build` or `npm run android:apk`):
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_API_BASE_URL` | The Android app uses this server instead of calling Watchmode directly. |
+| `VITE_API_MODE=direct` | Makes the web build call Watchmode from the browser too, with each visitor entering their own key. Useful for static hosting without a server. |
 
 ## Project layout
 
 ```
 server/
   index.js       Express app: /api routes, card batching, static hosting
-  watchmode.js   Watchmode client: endpoint allowlist, caching, rate limiting
   cache.js       TTL cache saved to disk
+shared/          Used by both the server and the Android app
+  watchmode.js   Watchmode client: endpoint allowlist, caching, rate limiting
   demo.js        Generated sample data for demo mode
 src/
-  api/           Typed API client and response types
+  api/           API client; server or direct-to-Watchmode transport; on-device cache
+  native/        Android back button and external links
   lib/           Data hooks, card store with lazy loading, formatting helpers
   store/         Profiles, My List, ratings and settings (stored in localStorage)
   components/    Navbar, Hero, Row, TitleCard, HoverPreview, DetailModal, ...
-  pages/         Home / TV / Movies, New & Popular, Browse, Search, Person, Watch, Profiles, Account
+  pages/         Home / TV / Movies, New & Popular, Browse, Search, Person, Watch, Profiles, Account, Setup
+android/         Capacitor Android project (Gradle)
+capacitor.config.ts
 ```
 
 ## Licensing and attribution

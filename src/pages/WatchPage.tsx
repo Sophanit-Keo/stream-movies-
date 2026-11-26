@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDetails } from '../components/DetailModal';
-import { BackIcon, ExternalIcon, InfoIcon } from '../components/Icons';
+import { BackIcon, ExternalIcon, InfoIcon, YoutubeIcon } from '../components/Icons';
 import { bestSource, useTitleSources } from '../components/WhereToWatch';
 import { useSources } from '../lib/catalog';
 import { isHttpUrl, isTv, regionName, youtubeEmbed, youtubeId } from '../lib/format';
+import { openExternal } from '../native/platform';
 import { useApp } from '../store/AppState';
 
 const KIND_LABEL: Record<string, string> = { sub: 'Included', free: 'Free', tve: 'TV provider', rent: 'Rent', buy: 'Buy' };
@@ -44,9 +45,21 @@ export function WatchPage() {
           <span className="muted">{videoId ? 'Trailer' : 'Now showing'}</span>
           <strong>{details?.title ?? ' '}</strong>
         </div>
-        <button type="button" className="btn btn--ghost" onClick={() => navigate(`/browse?title=${id}`)}>
-          <InfoIcon size={20} /> Details
-        </button>
+        <div className="watch-bar-actions">
+          {videoId && (
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => openExternal(`https://www.youtube.com/watch?v=${videoId}`)}
+              title="Open the trailer in YouTube"
+            >
+              <YoutubeIcon size={20} /> <span className="hide-sm">YouTube</span>
+            </button>
+          )}
+          <button type="button" className="btn btn--ghost" onClick={() => navigate(`/browse?title=${id}`)}>
+            <InfoIcon size={20} /> <span className="hide-sm">Details</span>
+          </button>
+        </div>
       </div>
 
       <div className="watch-stage">

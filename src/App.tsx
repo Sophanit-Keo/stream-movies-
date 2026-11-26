@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { api, onApiError, type ApiError } from './api/client';
+import { api, initTransport, onApiError, type ApiError } from './api/client';
 import type { AppConfig } from './api/types';
 import { DetailModal } from './components/DetailModal';
 import { Footer } from './components/Footer';
 import { HoverPreviewProvider } from './components/HoverPreview';
 import { CloseIcon } from './components/Icons';
 import { Logo, Navbar } from './components/Navbar';
+import { TabBar } from './components/TabBar';
+import { NativeBridge } from './native/NativeBridge';
 import { AccountPage } from './pages/AccountPage';
 import { ExplorePage } from './pages/ExplorePage';
 import { HomePage } from './pages/HomePage';
@@ -15,6 +17,7 @@ import { NewPopularPage } from './pages/NewPopularPage';
 import { PersonPage } from './pages/PersonPage';
 import { ProfilesPage } from './pages/ProfilesPage';
 import { SearchPage } from './pages/SearchPage';
+import { SetupPage } from './pages/SetupPage';
 import { WatchPage } from './pages/WatchPage';
 import { AppStateProvider, useApp } from './store/AppState';
 
@@ -23,16 +26,18 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.config().then(setConfig, (e: Error) => setError(e.message));
+    initTransport()
+      .then(() => api.config())
+      .then(setConfig, (e: Error) => setError(e.message));
   }, []);
 
   if (error) {
     return (
       <div className="splash">
         <Logo />
-        <p>Couldn't reach the API server.</p>
+        <p>Couldn't start the app.</p>
         <p className="muted">{error}</p>
-        <p className="muted">Start it with <code>npm run dev</code> and reload this page.</p>
+        <button type="button" className="btn btn--white" onClick={() => window.location.reload()}>Try again</button>
       </div>
     );
   }
@@ -44,6 +49,8 @@ export function App() {
       </div>
     );
   }
+
+  if (config.needsSetup) return <SetupPage />;
 
   return (
     <AppStateProvider config={config}>
@@ -88,8 +95,10 @@ function Shell() {
         </Routes>
       </main>
       {!bare && <Footer />}
+      {!bare && <TabBar />}
       <DetailModal />
-      <Notices />
+      <Notices bare={bare} hideDemo={bare || location.pathname === '/account'} />
+      <NativeBridge />
     </>
   );
 }
@@ -104,7 +113,7 @@ function NotFound() {
 }
 
 /** Demo-mode notice and account-level API problems (bad key, quota or rate limit). */
-function Notices() {
+function Notices({ bare, hideDemo }: { bare: boolean; hideDemo: boolean }) {
   const { config } = useApp();
   const [apiError, setApiError] = useState<ApiError | null>(null);
   const [demoDismissed, setDemoDismissed] = useState(() => {
@@ -125,12 +134,14 @@ function Notices() {
   }, [config.demo, demoDismissed]);
 
   return (
-    <div className="notices" aria-live="polite">
+    <div className={`notices${bare ? ' notices--bare' : ''}`} aria-live="polite">
       {apiError && (
         <div className="notice notice--error">
           <span>
             {apiError.status === 401
-              ? 'Watchmode rejected the API key. Check WATCHMODE_API_KEY in your .env file and restart the server.'
+              ? config.mode === 'direct'
+                ? 'Watchmode rejected the API key. Update it on the Account page.'
+                : 'Watchmode rejected the API key. Check WATCHMODE_API_KEY in your .env file and restart the server.'
               : 'Watchmode request limit reached. Titles you have already seen still load from the cache; new ones will load again later.'}
           </span>
           <button type="button" className="icon-btn" aria-label="Dismiss" onClick={() => setApiError(null)}>
@@ -138,10 +149,13 @@ function Notices() {
           </button>
         </div>
       )}
-      {config.demo && !demoDismissed && (
+      {config.demo && !demoDismissed && !hideDemo && (
         <div className="notice">
           <span>
-            <strong>Demo mode:</strong> these are generated sample titles. Add your Watchmode API key to <code>.env</code> to browse real movies and shows.
+            <strong>Demo mode:</strong> these are generated sample titles.{' '}
+            {config.mode === 'direct'
+              ? 'Add your Watchmode API key on the Account page to browse real movies and shows.'
+              : <>Add your Watchmode API key to <code>.env</code> to browse real movies and shows.</>}
           </span>
           <button
             type="button"

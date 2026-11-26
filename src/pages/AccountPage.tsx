@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { loadDirectSettings, saveDirectSettings } from '../api/direct';
 import { api } from '../api/client';
 import type { ApiStatus, Region } from '../api/types';
 import { Avatar } from '../components/Avatar';
@@ -59,12 +61,15 @@ export function AccountPage() {
 
       <section className="panel">
         <h2>Watchmode API</h2>
+        {config.mode === 'direct' && <DeviceKeySettings demo={config.demo} />}
         {config.demo ? (
-          <p>
-            Running in <strong>demo mode</strong> with generated sample titles. Add <code>WATCHMODE_API_KEY</code> to your <code>.env</code> file
-            and restart the server to load real movies and shows.{' '}
-            <a className="link" href="https://api.watchmode.com/requestApiKey/" target="_blank" rel="noopener noreferrer">Get a free key</a>
-          </p>
+          config.mode !== 'direct' && (
+            <p>
+              Running in <strong>demo mode</strong> with generated sample titles. Add <code>WATCHMODE_API_KEY</code> to your <code>.env</code> file
+              and restart the server to load real movies and shows.{' '}
+              <a className="link" href="https://api.watchmode.com/requestApiKey/" target="_blank" rel="noopener noreferrer">Get a free key</a>
+            </p>
+          )
         ) : loading ? (
           <div className="skeleton-line" />
         ) : (
@@ -83,13 +88,51 @@ export function AccountPage() {
             )}
             {status && (
               <p className="muted">
-                Server cache: {status.cache.entries.toLocaleString()} saved responses ({status.cache.hits.toLocaleString()} hits, {status.cache.misses.toLocaleString()} misses since start).
+                {config.mode === 'direct' ? 'Saved on this device' : 'Server cache'}: {status.cache.entries.toLocaleString()} saved responses ({status.cache.hits.toLocaleString()} hits, {status.cache.misses.toLocaleString()} misses since start).
                 Cached answers cost no credits.
               </p>
             )}
           </>
         )}
       </section>
+    </div>
+  );
+}
+
+/** Android app only: the Watchmode key lives on the device and can be changed here. */
+function DeviceKeySettings({ demo }: { demo: boolean }) {
+  const { apiKey } = loadDirectSettings();
+  const [cleared, setCleared] = useState(false);
+  const masked = apiKey ? `••••••${apiKey.slice(-4)}` : null;
+  const reset = () => {
+    saveDirectSettings({});
+    window.location.reload();
+  };
+  return (
+    <div className="device-key">
+      <p>
+        {demo
+          ? <>Using <strong>demo mode</strong> with generated sample titles.</>
+          : <>Watchmode API key on this device: <code>{masked}</code></>}
+      </p>
+      <div className="button-row">
+        <button type="button" className="btn btn--outline" onClick={reset}>
+          {demo ? 'Add an API key' : 'Change API key'}
+        </button>
+        {!demo && (
+          <button
+            type="button"
+            className="btn btn--outline"
+            disabled={cleared}
+            onClick={async () => {
+              await api.clearCache();
+              setCleared(true);
+            }}
+          >
+            {cleared ? 'Cache cleared' : 'Clear saved data'}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

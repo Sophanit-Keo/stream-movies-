@@ -6,6 +6,7 @@ import { requestCards, setFullCard, useCardEntry, useInView } from '../lib/cards
 import { isHttpUrl, isTv, matchScore, runtime, truncate, yearRange, youtubeEmbed, youtubeId } from '../lib/format';
 import { useCloseTitle, useOpenTitle, usePlay } from '../lib/nav';
 import { useQuery } from '../lib/useQuery';
+import { openExternal } from '../native/platform';
 import { useApp } from '../store/AppState';
 import { CheckIcon, CloseIcon, PlayIcon, PlusIcon, VolumeOff, VolumeOn } from './Icons';
 import { RateButton } from './RateButton';
@@ -240,7 +241,7 @@ function Episodes({ id, region }: { id: number; region: string }) {
           .sort((a, b) => a.episode_number - b.episode_number)
           .map((ep) => {
             const link = ep.sources?.find((s) => isHttpUrl(s.web_url))?.web_url;
-            const open = () => (link ? window.open(link, '_blank', 'noopener,noreferrer') : play(id));
+            const open = () => (link ? openExternal(link) : play(id));
             return (
               <li key={ep.id}>
                 <button type="button" className="episode" onClick={open} title={link ? 'Open this episode on a streaming service' : 'Play trailer'}>

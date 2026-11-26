@@ -1,6 +1,8 @@
-import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import type { AutocompleteResult } from '../api/types';
+import { SearchIcon } from '../components/Icons';
 import { TitleGrid } from '../components/TitleGrid';
 import { seedCards } from '../lib/cards';
 import { TYPES, useTitleList } from '../lib/catalog';
@@ -27,6 +29,7 @@ export function SearchPage() {
   if (q.length < 2) {
     return (
       <div className="page page--padded">
+        <PageSearchBox initial={q} />
         <h1 className="page-title page-title--sm">Popular Searches</h1>
         <TitleGrid items={popular.data ?? []} loading={popular.loading} />
       </div>
@@ -35,6 +38,7 @@ export function SearchPage() {
 
   return (
     <div className="page page--padded">
+      <PageSearchBox initial={q} />
       {!!people.length && (
         <div className="search-people">
           <span className="muted">People:</span>
@@ -70,6 +74,43 @@ export function SearchPage() {
           />
         </>
       )}
+    </div>
+  );
+}
+
+/** Search field at the top of the page on phones, where the navbar has no search box. */
+function PageSearchBox({ initial }: { initial: string }) {
+  const navigate = useNavigate();
+  const [value, setValue] = useState(initial);
+  const timer = useRef<number>();
+  const input = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 799px)').matches && !initial) input.current?.focus();
+    // Only when the page first opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="page-search">
+      <SearchIcon size={20} />
+      <input
+        ref={input}
+        type="search"
+        enterKeyHint="search"
+        placeholder="Search shows, movies, people"
+        value={value}
+        aria-label="Search titles and people"
+        onChange={(e) => {
+          const next = e.target.value;
+          setValue(next);
+          window.clearTimeout(timer.current);
+          timer.current = window.setTimeout(() => {
+            const trimmed = next.trim();
+            navigate(`/search${trimmed ? `?q=${encodeURIComponent(trimmed)}` : ''}`, { replace: true });
+          }, 400);
+        }}
+      />
     </div>
   );
 }

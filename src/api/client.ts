@@ -3,13 +3,9 @@ import type {
   Region, Release, Season, Source, TitleDetails, TitleSource,
 } from './types';
 
-export class ApiError extends Error {
-  constructor(public status: number, message: string) {
-    super(message);
-  }
-}
+import { ApiError, transport, type Params } from './transport';
 
-type Params = Record<string, string | number | boolean | null | undefined>;
+export { ApiError, initTransport } from './transport';
 
 type ErrorListener = (err: ApiError) => void;
 const errorListeners = new Set<ErrorListener>();
@@ -22,33 +18,17 @@ export function onApiError(fn: ErrorListener) {
   };
 }
 
-async function get<T>(path: string, params?: Params): Promise<T> {
-  const url = new URL(`/api${path}`, window.location.origin);
-  for (const [k, v] of Object.entries(params ?? {})) {
-    if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
-  }
-  let res: Response;
+async function call<T>(fn: () => Promise<T>): Promise<T> {
   try {
-    res = await fetch(url);
-  } catch {
-    throw new ApiError(0, 'Network error: is the API server running?');
+    return await fn();
+  } catch (err) {
+    const apiErr = err instanceof ApiError ? err : new ApiError(0, (err as Error)?.message || 'Request failed');
+    if (apiErr.status === 401 || apiErr.status === 429) errorListeners.forEach((l) => l(apiErr));
+    throw apiErr;
   }
-  if (!res.ok) {
-    let message = res.statusText;
-    try {
-      const body = await res.json();
-      message = body.error || message;
-    } catch {
-      /* not JSON */
-    }
-    const err = new ApiError(res.status, message);
-    if (res.status === 401 || res.status === 429) errorListeners.forEach((fn) => fn(err));
-    throw err;
-  }
-  return res.json() as Promise<T>;
 }
 
-const wm = <T>(path: string, params?: Params) => get<T>(`/wm${path}`, params);
+const wm = <T>(path: string, params?: Params) => call(() => transport().wm<T>(path, params));
 
 export interface ListTitlesParams {
   types?: string;
@@ -67,14 +47,15 @@ export interface ListTitlesParams {
 }
 
 export const api = {
-  config: () => get<AppConfig>('/config'),
-  status: () => get<ApiStatus>('/status'),
-  cards: (ids: number[]) => get<CardsResponse>('/cards', { ids: ids.join(',') }),
+  config: () => call<AppConfig>(() => transport().config()),
+  status: () => call<ApiStatus>(() => transport().status()),
+  cards: (ids: number[]) => call<CardsResponse>(() => transport().cards(ids)),
+  clearCache: () => transport().clearCache?.(),
 
   genres: () => wm<Genre[]>('/genres'),
   regions: () => wm<Region[]>('/regions'),
   sources: (regions: string) => wm<Source[]>('/sources', { regions }),
-  listTitles: (params: ListTitlesParams) => wm<ListTitlesResponse>('/list-titles', params as Params),
+  listTitles: (params: ListTitlesParams) => wm<ListTitlesResponse>('/list-titles', params as unknown as Params),
   releases: (params: { start_date?: string; end_date?: string; limit?: number } = {}) =>
     wm<{ releases: Release[] }>('/releases', params),
   autocomplete: (searchValue: string, searchType = 1) =>

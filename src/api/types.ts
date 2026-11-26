@@ -4,6 +4,10 @@ export type SourceKind = 'sub' | 'rent' | 'buy' | 'free' | 'tve';
 export interface AppConfig {
   demo: boolean;
   region: string;
+  /** server: through the Node server. direct: the device calls Watchmode itself (Android app). */
+  mode?: 'server' | 'direct';
+  /** Direct mode without an API key yet: show the setup screen. */
+  needsSetup?: boolean;
 }
 
 export interface ApiStatus {
