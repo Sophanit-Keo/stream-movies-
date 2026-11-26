@@ -87,7 +87,7 @@ export const TitleCard = memo(function TitleCard({ item, variant = 'landscape', 
             !loading && <div className="card-fallback"><span>{card.title}</span></div>
           )}
           {variant === 'landscape' && shownImage && <span className="card-title">{card.title}</span>}
-          {badge && <span className="card-badge">{badge}</span>}
+          {badge && <span className={`card-badge${badge === 'Free' ? ' card-badge--free' : ''}`}>{badge}</span>}
         </div>
       </button>
       {caption && <div className="card-caption">{caption}</div>}

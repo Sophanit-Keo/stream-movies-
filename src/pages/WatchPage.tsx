@@ -2,13 +2,13 @@ import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDetails } from '../components/DetailModal';
 import { BackIcon, ExternalIcon, InfoIcon, YoutubeIcon } from '../components/Icons';
-import { bestSource, useTitleSources } from '../components/WhereToWatch';
+import { bestSource, SOURCE_ORDER, useTitleSources } from '../components/WhereToWatch';
 import { useSources } from '../lib/catalog';
 import { isHttpUrl, isTv, regionName, youtubeEmbed, youtubeId } from '../lib/format';
 import { openExternal } from '../native/platform';
 import { useApp } from '../store/AppState';
 
-const KIND_LABEL: Record<string, string> = { sub: 'Included', free: 'Free', tve: 'TV provider', rent: 'Rent', buy: 'Buy' };
+const KIND_LABEL: Record<string, string> = { sub: 'Subscription', free: 'Free', tve: 'TV provider', rent: 'Rent', buy: 'Buy' };
 
 /** Full-screen trailer player with buttons to watch the full title on a real service. */
 export function WatchPage() {
@@ -30,7 +30,7 @@ export function WatchPage() {
   const options = (sources ?? [])
     .filter((s) => isHttpUrl(s.web_url))
     .filter((s, i, arr) => arr.findIndex((x) => x.source_id === s.source_id && x.type === s.type) === i)
-    .sort((a, b) => ['sub', 'free', 'tve', 'rent', 'buy'].indexOf(a.type) - ['sub', 'free', 'tve', 'rent', 'buy'].indexOf(b.type))
+    .sort((a, b) => SOURCE_ORDER.indexOf(a.type) - SOURCE_ORDER.indexOf(b.type))
     .slice(0, 8);
 
   const back = () => (window.history.length > 1 ? navigate(-1) : navigate('/browse'));
@@ -90,7 +90,9 @@ export function WatchPage() {
         )}
         {!!options.length && (
           <>
-            <span className="watch-dock-label">Watch the full {isTv(details?.type) ? 'series' : 'movie'} on</span>
+            <span className="watch-dock-label">
+              Watch the full {isTv(details?.type) ? 'series' : 'movie'}{best?.type === 'free' ? ' free' : ''} on
+            </span>
             <div className="watch-options">
               {options.map((s) => (
                 <a
@@ -98,7 +100,7 @@ export function WatchPage() {
                   href={s.web_url!}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`watch-option${s === best ? ' is-best' : ''}`}
+                  className={`watch-option${s === best ? ' is-best' : ''}${s.type === 'free' ? ' is-free' : ''}`}
                 >
                   {logos.get(s.source_id) ? <img src={logos.get(s.source_id)!} alt="" /> : null}
                   <span>

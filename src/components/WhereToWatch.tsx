@@ -6,9 +6,10 @@ import { isHttpUrl, regionName } from '../lib/format';
 import { useQuery } from '../lib/useQuery';
 import { ExternalIcon } from './Icons';
 
+// Free first: anyone can watch those without a subscription.
 const GROUPS: { kind: SourceKind; label: string }[] = [
+  { kind: 'free', label: 'Watch free' },
   { kind: 'sub', label: 'Stream' },
-  { kind: 'free', label: 'Free' },
   { kind: 'tve', label: 'With TV provider' },
   { kind: 'rent', label: 'Rent' },
   { kind: 'buy', label: 'Buy' },
@@ -38,14 +39,22 @@ export function useTitleSources(id: number, region: string) {
   return useQuery<TitleSource[]>(`title-sources:${id}:${region}`, () => api.titleSources(id, region));
 }
 
-/** Picks the source a Play button should open: subscription first, then free, then rent/buy. */
+/** Order for showing sources: free, then subscription, TV provider, rent and buy. */
+export const SOURCE_ORDER: SourceKind[] = ['free', 'sub', 'tve', 'rent', 'buy'];
+
+/** Picks the source to suggest first: free when there is one, then subscription, then rent/buy. */
 export function bestSource(sources: TitleSource[] | undefined) {
   if (!sources) return undefined;
-  for (const kind of ['sub', 'free', 'tve', 'rent', 'buy'] as SourceKind[]) {
+  for (const kind of SOURCE_ORDER) {
     const s = sources.find((x) => x.type === kind && isHttpUrl(x.web_url));
     if (s) return s;
   }
   return undefined;
+}
+
+/** A free service (usually with ads) that plays the full title, if any. */
+export function freeSource(sources: TitleSource[] | undefined) {
+  return sources?.find((s) => s.type === 'free' && isHttpUrl(s.web_url));
 }
 
 export function WhereToWatch({ id, region, compact }: { id: number; region: string; compact?: boolean }) {
@@ -72,7 +81,7 @@ export function WhereToWatch({ id, region, compact }: { id: number; region: stri
         const group = items.filter((s) => s.type === kind);
         if (!group.length) return null;
         return (
-          <div key={kind} className="wtw-group">
+          <div key={kind} className={`wtw-group wtw-group--${kind}`}>
             <h4>{label}</h4>
             <ul>
               {group.map((s) => {

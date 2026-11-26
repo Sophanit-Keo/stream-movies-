@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { uniqueById, useReleases } from '../lib/catalog';
 import { formatDate, isoDate } from '../lib/format';
 import { useOpenTitle } from '../lib/nav';
@@ -13,10 +13,22 @@ const LINKS = [
   { to: '/browse', label: 'Home' },
   { to: '/tv', label: 'TV Shows' },
   { to: '/movies', label: 'Movies' },
+  { to: '/explore?free=1', label: 'Free to Watch' },
   { to: '/latest', label: 'New & Popular' },
   { to: '/my-list', label: 'My List' },
   { to: '/explore', label: 'Browse by Service' },
 ];
+
+/** Active-link check that tells /explore and /explore?free=1 apart. */
+function useIsActive() {
+  const { pathname, search } = useLocation();
+  const onFree = new URLSearchParams(search).get('free') === '1';
+  return (to: string) => {
+    const [path, qs] = to.split('?');
+    if (pathname !== path) return false;
+    return path !== '/explore' || (qs?.includes('free=1') ?? false) === onFree;
+  };
+}
 
 export function Logo() {
   return <span className="logo">{APP_NAME}</span>;
@@ -25,6 +37,7 @@ export function Logo() {
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const { profile } = useApp();
+  const isActive = useIsActive();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -40,15 +53,29 @@ export function Navbar() {
       </Link>
       <nav className="nav-links" aria-label="Main">
         {LINKS.map((l) => (
-          <NavLink key={l.to} to={l.to} className={({ isActive }) => (isActive ? 'is-active' : undefined)}>
+          <Link key={l.to} to={l.to} className={isActive(l.to) ? 'is-active' : undefined} aria-current={isActive(l.to) ? 'page' : undefined}>
             {l.label}
-          </NavLink>
+          </Link>
         ))}
       </nav>
       <MobileMenu />
       <nav className="nav-chips" aria-label="Categories">
-        <NavLink to="/tv" className={({ isActive }) => `chip${isActive ? ' is-active' : ''}`}>TV Shows</NavLink>
-        <NavLink to="/movies" className={({ isActive }) => `chip${isActive ? ' is-active' : ''}`}>Movies</NavLink>
+        {[
+          { to: '/tv', label: 'TV Shows', short: 'TV' },
+          { to: '/movies', label: 'Movies' },
+          { to: '/explore?free=1', label: 'Free' },
+        ].map((c) => (
+          <Link key={c.to} to={c.to} className={`chip${isActive(c.to) ? ' is-active' : ''}`} aria-label={c.label}>
+            {c.short ? (
+              <>
+                <span className="chip-long">{c.label}</span>
+                <span className="chip-short">{c.short}</span>
+              </>
+            ) : (
+              c.label
+            )}
+          </Link>
+        ))}
       </nav>
       <div className="nav-right">
         <SearchBox />
@@ -63,7 +90,8 @@ export function Navbar() {
 function MobileMenu() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
-  useEffect(() => setOpen(false), [location.pathname]);
+  const isActive = useIsActive();
+  useEffect(() => setOpen(false), [location.pathname, location.search]);
   return (
     <div className="nav-mobile" onMouseLeave={() => setOpen(false)}>
       <button type="button" className="nav-mobile-btn" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
@@ -72,9 +100,9 @@ function MobileMenu() {
       {open && (
         <div className="dropdown dropdown--center">
           {LINKS.map((l) => (
-            <NavLink key={l.to} to={l.to} className={({ isActive }) => `dropdown-item${isActive ? ' is-active' : ''}`}>
+            <Link key={l.to} to={l.to} className={`dropdown-item${isActive(l.to) ? ' is-active' : ''}`}>
               {l.label}
-            </NavLink>
+            </Link>
           ))}
         </div>
       )}

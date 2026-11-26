@@ -30,17 +30,21 @@ export function ExplorePage() {
   const genre = params.get('genre') ?? '';
   const service = params.get('service') ?? '';
   const sort = params.get('sort') ?? 'popularity_desc';
+  // Free: titles on free, ad-supported services, where the full title plays at no cost.
+  const free = params.get('free') === '1';
 
   const query: ListTitlesParams = useMemo(
     () => ({
       types: TYPES[kind],
       genres: genre || undefined,
       source_ids: service || undefined,
-      regions: service ? settings.region : undefined,
+      source_types: free ? 'free' : undefined,
+      // Service and type filters need a country (Watchmode allows exactly one).
+      regions: service || free ? settings.region : undefined,
       sort_by: sort,
       limit: PAGE_SIZE,
     }),
-    [kind, genre, service, sort, settings.region],
+    [kind, genre, service, free, sort, settings.region],
   );
   const baseKey = listKey(query);
 
@@ -104,14 +108,30 @@ export function ExplorePage() {
     });
 
   const serviceOptions = useMemo(() => {
+    if (free) {
+      return (sources ?? []).filter((s) => s.type === 'free').sort((a, b) => Number(!a.logo_100px) - Number(!b.logo_100px) || a.name.localeCompare(b.name));
+    }
     const featured = featuredServices(sources, 12);
     const rest = (sources ?? []).filter((s) => (s.type === 'sub' || s.type === 'free') && !featured.includes(s)).sort((a, b) => a.name.localeCompare(b.name));
     return [...featured, ...rest];
-  }, [sources]);
+  }, [sources, free]);
+
+  const toggleFree = () =>
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (free) next.delete('free');
+      else {
+        next.set('free', '1');
+        // A paid service can't be combined with the free filter.
+        const current = sources?.find((s) => String(s.id) === next.get('service'));
+        if (current && current.type !== 'free') next.delete('service');
+      }
+      return next;
+    });
 
   const selectedService = sources?.find((s) => String(s.id) === service);
   const selectedGenre = genres?.find((g) => String(g.id) === genre);
-  const heading = [selectedService?.name, selectedGenre?.name, kind === 'movie' ? 'Movies' : kind === 'tv' ? 'TV Shows' : null]
+  const heading = [free && !selectedService ? 'Free to Watch' : null, selectedService?.name, selectedGenre?.name, kind === 'movie' ? 'Movies' : kind === 'tv' ? 'TV Shows' : null]
     .filter(Boolean)
     .join(' · ') || 'Browse All';
 
@@ -123,8 +143,13 @@ export function ExplorePage() {
           <h1 className="page-title">{heading}</h1>
           {total !== null && (
             <p className="muted">
-              {total.toLocaleString()} titles{selectedService ? ` in ${regionName(settings.region)}` : ''}
+              {total.toLocaleString()} titles{free ? ' free to watch' : ''}{selectedService || free ? ` in ${regionName(settings.region)}` : ''}
               {profile?.kids ? ' · titles for older viewers are hidden' : ''}
+            </p>
+          )}
+          {free && (
+            <p className="muted explore-note">
+              The full title plays at no cost on the service shown, usually with ads. No subscription needed.
             </p>
           )}
         </div>
@@ -138,8 +163,11 @@ export function ExplorePage() {
             </button>
           ))}
         </div>
+        <button type="button" className={`toggle-chip${free ? ' is-active' : ''}`} aria-pressed={free} onClick={toggleFree}>
+          Free only
+        </button>
         <select className="select" value={service} onChange={(e) => setParam('service', e.target.value)} aria-label="Streaming service">
-          <option value="">All services</option>
+          <option value="">{free ? 'All free services' : 'All services'}</option>
           {serviceOptions.map((s) => (
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
@@ -172,6 +200,7 @@ export function ExplorePage() {
       <TitleGrid
         items={items}
         loading={loading}
+        badge={free ? 'Free' : undefined}
         onEndReached={hasMore ? () => !loading && loadPage(pages.length + 1, baseKey) : undefined}
       />
     </div>

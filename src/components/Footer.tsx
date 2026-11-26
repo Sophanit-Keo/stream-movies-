@@ -8,6 +8,7 @@ export function Footer() {
         <Link to="/browse">Home</Link>
         <Link to="/tv">TV Shows</Link>
         <Link to="/movies">Movies</Link>
+        <Link to="/explore?free=1">Free to Watch</Link>
         <Link to="/latest">New &amp; Popular</Link>
         <Link to="/explore">Browse by Service</Link>
         <Link to="/my-list">My List</Link>

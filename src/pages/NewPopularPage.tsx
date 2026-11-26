@@ -6,12 +6,16 @@ import { formatDate, isoDate, truncate } from '../lib/format';
 import { useOpenTitle } from '../lib/nav';
 import type { Release } from '../api/types';
 import { InfoIcon } from '../components/Icons';
+import { useApp } from '../store/AppState';
 
 export function NewPopularPage() {
+  const { settings } = useApp();
   const releases = useReleases();
   const popularTv = useTitleList({ types: TYPES.tv, sort_by: 'popularity_desc', limit: 30 });
   const popularMovies = useTitleList({ types: TYPES.movie, sort_by: 'popularity_desc', limit: 30 });
   const everyone = useTitleList({ types: TYPES.all, sort_by: 'popularity_desc', limit: 30 });
+  // Same request as the home page's Free to Watch row, so it is shared from cache.
+  const free = useTitleList({ types: TYPES.all, source_types: 'free', regions: settings.region, sort_by: 'popularity_desc', limit: 20 });
   const today = isoDate(new Date());
 
   const all = releases.data ?? [];
@@ -31,6 +35,7 @@ export function NewPopularPage() {
           captions={caption(newThisWeek)}
         />
         <Row title="Everyone's Watching" items={everyone.data} loading={everyone.loading} />
+        <Row title="Free to Watch" items={free.data} loading={free.loading} href="/explore?free=1" badge="Free" />
         <Row title="Top 10 TV Shows Today" items={popularTv.data?.slice(0, 10)} loading={popularTv.loading} variant="poster" ranked />
         <Row title="Top 10 Movies Today" items={popularMovies.data?.slice(0, 10)} loading={popularMovies.loading} variant="poster" ranked />
       </div>

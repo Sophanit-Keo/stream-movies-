@@ -222,6 +222,15 @@ hr {
   background: var(--accent-hover);
 }
 
+.btn--free {
+  background: #1d7f45;
+  color: #fff;
+}
+
+.btn--free:hover {
+  background: #23944f;
+}
+
 .btn--gray {
   background: rgba(109, 109, 110, 0.7);
   color: #fff;
@@ -428,6 +437,28 @@ hr {
 
 .chip:hover {
   border-color: #fff;
+}
+
+.pill.pill--free {
+  background: #1d7f45;
+  margin-left: 0;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+  padding: 2px 10px;
+}
+
+.toggle-chip {
+  padding: 6px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.toggle-chip.is-active {
+  background: #1d7f45;
+  border-color: #1d7f45;
 }
 
 .pill {
@@ -1156,6 +1187,10 @@ main {
   letter-spacing: 0.05em;
 }
 
+.card-badge--free {
+  background: #1d7f45;
+}
+
 .card-caption {
   margin-top: 6px;
   font-size: 12px;
@@ -1462,6 +1497,10 @@ main {
   color: var(--muted);
 }
 
+.wtw-group--free h4 {
+  color: var(--green);
+}
+
 .wtw ul {
   list-style: none;
   margin: 0;
@@ -1721,6 +1760,11 @@ a.wtw-item:hover {
 
 .explore-head p {
   margin: 0;
+}
+
+.explore-head .explore-note {
+  margin-top: 4px;
+  font-size: 14px;
 }
 
 .explore-logo {
@@ -2071,6 +2115,10 @@ a.wtw-item:hover {
 
 .watch-option.is-best {
   border-color: var(--accent);
+}
+
+.watch-option.is-free {
+  border-color: #1d7f45;
 }
 
 .watch-option img {
@@ -2425,7 +2473,16 @@ a.wtw-item:hover {
   .nav { gap: 12px; }
   .nav .logo { font-size: 24px; }
   .nav-mobile, .nav-bell, .nav .search { display: none; }
-  .nav-chips { display: flex; }
+  .nav-chips {
+    display: flex;
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav-chips::-webkit-scrollbar { display: none; }
+  .nav-chips .chip { flex: none; }
+  .nav-right { flex: none; }
   .profile-btn > svg { display: none; }
   .tabbar {
     display: flex;
@@ -2500,6 +2557,11 @@ a.wtw-item:hover {
 }
 
 @media (max-width: 499px) {
+  .nav { gap: 8px; }
+  .nav .logo { font-size: 20px; }
+  .nav-logo { flex: none; }
+  .nav-chips { gap: 5px; }
+  .nav-chips .chip { padding: 4px 9px; font-size: 12.5px; }
   .row-track { --per-row: 2.3; }
   .row--poster .row-track { --per-row: 3.2; }
   .row--ranked .row-track { --per-row: 2.1; }
@@ -2520,4 +2582,15 @@ a.wtw-item:hover {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+.chip-short {
+  display: none;
+}
+
+@media (max-width: 359px) {
+  .nav .logo { font-size: 17px; }
+  .nav-chips .chip { padding: 3px 8px; font-size: 12px; }
+  .chip-long { display: none; }
+  .chip-short { display: inline; }
 }

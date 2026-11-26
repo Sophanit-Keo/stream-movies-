@@ -14,10 +14,12 @@ interface RowProps {
   href?: string;
   captions?: Record<number, string>;
   badges?: Record<number, string>;
+  /** A badge shown on every card in the row, such as "Free". */
+  badge?: string;
 }
 
 /** A horizontally scrolling shelf of titles with paging arrows. */
-export function Row({ title, items, loading, variant = 'landscape', ranked, href, captions, badges }: RowProps) {
+export function Row({ title, items, loading, variant = 'landscape', ranked, href, captions, badges, badge }: RowProps) {
   const track = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
@@ -80,7 +82,7 @@ export function Row({ title, items, loading, variant = 'landscape', ranked, href
                   variant={variant}
                   rank={ranked ? i + 1 : undefined}
                   caption={captions?.[item.id]}
-                  badge={badges?.[item.id]}
+                  badge={badges?.[item.id] ?? badge}
                 />
               ))}
         </div>

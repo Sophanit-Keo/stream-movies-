@@ -80,9 +80,21 @@ export function HomePage({ kind }: { kind: Kind }) {
 
   const label = KIND_LABEL[kind];
 
-  const listRow = (key: string, title: string, params: ListTitlesParams, href?: string) => (
-    <LazyRow key={key} title={title} queryKey={listKey(params)} load={() => fetchList(params)} href={href} />
+  const listRow = (key: string, title: string, params: ListTitlesParams, href?: string, badge?: string) => (
+    <LazyRow key={key} title={title} queryKey={listKey(params)} load={() => fetchList(params)} href={href} badge={badge} />
   );
+
+  // Titles on free, ad-supported services: the full movie or show plays at no cost there.
+  // Watchmode allows only one country when filtering by source type.
+  const freeParams: ListTitlesParams = {
+    types,
+    source_types: 'free',
+    regions: settings.region,
+    sort_by: 'popularity_desc',
+    limit: 20,
+    ...(kids && kidsGenreIds ? { genres: kidsGenreIds } : {}),
+  };
+  const freeHref = `/explore?free=1${kind !== 'all' ? `&type=${kind}` : ''}`;
 
   const genreRows = (kids ? KIDS_GENRE_NAMES.map((names) => ({ names, title: names[0] })) : GENRE_ROWS)
     .map((g) => ({ ...g, genre: findGenre(genres, ...g.names) }))
@@ -136,6 +148,9 @@ export function HomePage({ kind }: { kind: Kind }) {
             {!kids && <Row title="Trending Now" items={popular.data?.slice(10)} href={`/explore?type=${kind}&sort=popularity_desc`} />}
           </>
         )}
+
+        {(!kids || genres) &&
+          listRow('free', kind === 'all' ? 'Free to Watch' : `Free ${label}`, freeParams, freeHref, 'Free')}
 
         {/* Release lists have no maturity ratings, so kids profiles skip them. */}
         {!kids && <Row

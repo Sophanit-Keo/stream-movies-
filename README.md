@@ -12,6 +12,7 @@ A streaming-style movie and TV app built on the [Watchmode API](https://api.watc
 - **Hover previews:** rest the pointer on a card and an enlarged preview appears with Play, Add to My List, a thumbs rating and More Info.
 - **Title details:** trailer, match score, maturity rating, cast and crew, where to watch (stream, free, rent or buy, with prices), a season picker with episodes, and More Like This.
 - **TV Shows, Movies, and New & Popular pages**, including a dated Coming Soon list.
+- **Free to Watch:** a home row, a menu link, and a **Free only** filter on the browse page for titles on free, ad-supported services. Those play the full movie or show at no cost on that service. When a title is free somewhere, its details show a **Watch Free** button that opens it there.
 - **Browse by Service:** filter by streaming service, genre and type, and sort, with infinite scroll.
 - **Search:** results update as you type, and matching people link to their own pages.
 - **Person pages:** biography, Known For, and filmography.

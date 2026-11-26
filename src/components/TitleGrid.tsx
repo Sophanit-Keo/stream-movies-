@@ -7,10 +7,12 @@ interface Props {
   loading?: boolean;
   onEndReached?: () => void;
   captions?: Record<number, string>;
+  /** A badge shown on every card, such as "Free". */
+  badge?: string;
 }
 
 /** A wrapping grid of titles, with optional infinite scroll. */
-export function TitleGrid({ items, variant = 'landscape', loading, onEndReached, captions }: Props) {
+export function TitleGrid({ items, variant = 'landscape', loading, onEndReached, captions, badge }: Props) {
   const sentinel = useRef<HTMLDivElement>(null);
   const cb = useRef(onEndReached);
   cb.current = onEndReached;
@@ -28,7 +30,7 @@ export function TitleGrid({ items, variant = 'landscape', loading, onEndReached,
     <>
       <div className={`grid grid--${variant}`}>
         {items.map((item) => (
-          <TitleCard key={item.id} item={item} variant={variant} caption={captions?.[item.id]} />
+          <TitleCard key={item.id} item={item} variant={variant} caption={captions?.[item.id]} badge={badge} />
         ))}
         {loading &&
           Array.from({ length: 12 }, (_, i) => (

@@ -212,6 +212,11 @@ function listTitles(q) {
     const s = q.source_ids.split(',').map(Number);
     list = list.filter((t) => t.sources.some((x) => s.includes(x.id)));
   }
+  if (q.source_types) {
+    // Same type names as Watchmode: sub, free, tve, rent, buy (demo purchase stores sell both).
+    const kinds = q.source_types.split(',');
+    list = list.filter((t) => t.sources.some((x) => kinds.includes(x.type) || (x.type === 'purchase' && (kinds.includes('rent') || kinds.includes('buy')))));
+  }
   if (q.person_id) {
     const pid = Number(q.person_id);
     list = list.filter((t) => t.director.id === pid || t.cast.some((c) => c.id === pid));
@@ -292,7 +297,8 @@ export function demoRequest(pathname, query, region = 'US') {
   if (pathname === '/genres') return json(DEMO_GENRES);
   if (pathname === '/regions') return json(['US', 'GB', 'CA'].map((c) => ({ country: c, name: c, flag: '', data_tier: 1, plan_enabled: true })));
   if (pathname === '/sources') {
-    return json(SOURCES.map((s) => ({
+    const types = query.types ? String(query.types).split(',') : null;
+    return json(SOURCES.filter((s) => !types || types.includes(s.type)).map((s) => ({
       id: s.id, name: s.name, type: s.type, logo_100px: img('logo', s.id), regions: ['US', 'GB', 'CA'],
       ios_appstore_url: null, android_playstore_url: null, host_source_id: null, host_source: null,
     })));

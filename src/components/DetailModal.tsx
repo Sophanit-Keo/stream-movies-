@@ -10,7 +10,7 @@ import { openExternal } from '../native/platform';
 import { useApp } from '../store/AppState';
 import { CheckIcon, CloseIcon, PlayIcon, PlusIcon, VolumeOff, VolumeOn } from './Icons';
 import { RateButton } from './RateButton';
-import { WhereToWatch } from './WhereToWatch';
+import { freeSource, useTitleSources, WhereToWatch } from './WhereToWatch';
 
 /** Renders the details modal whenever the URL has ?title=<id>. */
 export function DetailModal() {
@@ -67,6 +67,9 @@ function Modal({ id }: { id: number }) {
   }, [videoId, settings.autoplayPreviews]);
 
   const listed = inMyList(id);
+  // Shares its request with the Where to Watch section below.
+  const { data: sources } = useTitleSources(id, settings.region);
+  const free = freeSource(sources);
   const match = matchScore(card);
   const tv = isTv(card?.type);
 
@@ -100,6 +103,16 @@ function Modal({ id }: { id: number }) {
               <button type="button" className="btn btn--white" onClick={() => play(id)}>
                 <PlayIcon size={24} /> Play
               </button>
+              {free && (
+                <button
+                  type="button"
+                  className="btn btn--free"
+                  onClick={() => openExternal(free.web_url!)}
+                  title={`Watch the full ${tv ? 'series' : 'movie'} free on ${free.name}`}
+                >
+                  <PlayIcon size={22} /> <span><span className="hide-sm">Watch </span>Free</span>
+                </button>
+              )}
               {card && (
                 <button
                   type="button"
@@ -140,6 +153,7 @@ function Modal({ id }: { id: number }) {
                   {card.us_rating && <span className="maturity">{card.us_rating}</span>}
                   {!tv && runtime(card.runtime_minutes) && <span>{runtime(card.runtime_minutes)}</span>}
                   {tv && <span>Series</span>}
+                  {free && <span className="pill pill--free">Free on {free.name}</span>}
                 </div>
                 <p className="modal-overview">{card.plot_overview}</p>
               </div>
